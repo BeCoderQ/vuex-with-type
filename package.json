@@ -1,0 +1,21 @@
+{
+  "name": "vuex-with-type",
+  "version": "1.0.6",
+  "description": "strong type check for vuex",
+  "main": "index.js",
+  "scripts": {},
+  "bin": {
+    "vwt": "./link/link.js"
+  },
+  "author": "zhou",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^15.12.5",
+    "@types/yargs": "^17.0.0"
+  },
+  "dependencies": {
+    "cli-color": "^2.0.0",
+    "commander": "^8.0.0",
+    "yargs": "^17.0.1"
+  }
+}
