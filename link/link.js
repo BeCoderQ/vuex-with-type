@@ -46,7 +46,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var yargs = require("yargs"), path = require("path"), fs = require("fs"), _a = require("../index"), excute = _a.excute, excuteWithConfig = _a.excuteWithConfig, asyncReadFile = _a.asyncReadFile, asyncWriteFile = _a.asyncWriteFile;
+var yargs = require("yargs"), path = require("path"), fs = require("fs"), _a = require("../libs/index"), excute = _a.excute, excuteWithConfig = _a.excuteWithConfig, asyncReadFile = _a.asyncReadFile, asyncWriteFile = _a.asyncWriteFile;
 function getConfigAndExcute(filePath) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, error, buffer, configJSON;
@@ -104,7 +104,7 @@ function getConfigAndExcute(filePath) {
                     }
                     return [3 /*break*/, 6];
                 case 2:
-                    defaultConfig = "{\n        \"mutationTypeName\": \"TMutation\",\n\n        \"stateTypeName\": \"TState\",\n\n        \"declareFileName\": \"vuex-type.d.ts\",\n\n        \"declareFilePath\": \"src\",\n\n        \"needTemplate\": true,\n\n        \"templateStyle\": \"normal\"\n      }";
+                    defaultConfig = "{\n        \"declareFileName\": \"vuex-type.d.ts\",\n\n        \"declareFilePath\": \"src\",\n\n        \"templateStyle\": \"normal\"\n      }";
                     return [4 /*yield*/, asyncWriteFile(configFilePath, defaultConfig)];
                 case 3:
                     result = _b.sent();

@@ -1,6 +1,6 @@
 {
   "name": "vuex-with-type",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "strong type check for vuex",
   "main": "index.js",
   "scripts": {},

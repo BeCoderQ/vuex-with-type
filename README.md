@@ -1,29 +1,41 @@
 ## 作用
-vuex-with-type是为了解决vuex4以下版本在typescript编写时无法正确推断出类型的问题，目前我暂时只写了state与mutation的类型推断。
+vuex-with-type是为了解决vuex4以下版本在typescript编写时无法正确推断出类型的问题，已支持嵌套的模块推断。
+
+### 效果
+
+- State:  ![state.gif](https://i.loli.net/2021/07/18/tRYLqQSeXBAzxJf.gif)
+
+- Commit : ![commit.gif](https://i.loli.net/2021/07/18/pEacgtQ5JvnDhUL.gif)
+
+- Dispatch: ![dispatch.gif](https://i.loli.net/2021/07/18/Nhq4noDHrwETKSe.gif)
 
 ## 原理
 vuex4以下不能正确推断出类型的本质原因是因为vuex官方的声明文件在合并Vue时将`$store`的类型推断写为了`Store<any>`，这导致我们后续的声明合并
-都无法收窄类型，因此state的类型为any，commit的类型也无法准确推断。我的方法很简单，读取node_modules中vuex的这个声明文件，将多余的部分去掉，
+都无法收窄类型，因此state的类型为any，commit等类型也无法准确推断。我的方法很简单，读取node_modules中vuex的这个声明文件，将多余的部分去掉，
 然后自动生成可以精确推断出state与commit的声明文件。
+
+## 安装
+
+```shell
+npm install vuex-with-type -g
+```
+
+
 
 ## 使用方法
 全局使用`vwt`命令：
 - vwt handbook  👉 **查看所有命令说明**
-- vwt config  👉 **生成配置文件 以配置文件的形式进行源码生成**
+- ~~vwt config  👉 **生成配置文件 以配置文件的形式进行源码生成**~~
 - vwt init  👉 **初始化并生成声明文件 如果有config命令生成的文件，则会优先使用它**
 
-### 细节说明
-考虑到中途使用此包或者是不想使用默认的模板覆盖你的`vuex/index.ts`，可以选择在提示是否覆盖时输入no，之后会在vuex的文件下生成一个typex.ts的文件，这是一个辅助性的类型文件，您可以在
-自己创建的`vuex/index.ts`中引用其中的映射工具`NonNeverState`与`isOwnKey`，另一个类型`DealNeverType`是用于处理对象中错误推断出`never`类型的工具。
+### 示例
 
-#### 示例
-- 选择不覆盖：
+- store/index.ts：
 
 ```typescript
 import Vue from 'vue'
-import Vuex from 'vuex'
-// 这里引入
-import { NonNeverState, isOwnKey } from "./typex";
+import Vuex, { Commit } from 'vuex'
+import { isOwnKey, NonNeverState, GetState, GetMutationKeyParamMap, GetActionKeyParamMap } from "vuex-with-type";
 
 Vue.use(Vuex)
 
@@ -34,55 +46,80 @@ const state = {
   appId: "1"
 }
 
-// 这里导出的字段名TState就是初始化时你设置的
-export type TState = NonNeverState<typeof state>
-
-export const mutations = {
-  SET_STATE(state: TState, obj: Partial<TState>) {
-    for (const key in obj) {
-      if (isOwnKey(key, obj)) {
-        state[key] = obj[key];
+// 将vuex store独立出来
+const storeOptions = {
+  state,
+  mutations: {
+    SET_STATE(s: NonNeverState<typeof state>, obj: Partial<NonNeverState<typeof state>>) {
+      for (const key in obj) {
+        if (isOwnKey(key, obj)) {
+          s[key] = obj[key];
+        }
       }
+    },
+    SET_NAME(s: NonNeverState<typeof state>, v: string) {
+      s.name = v;
     }
   },
-  SET_NAME(state: TState, v: string) {
-    state.name = v;
+  actions: {
+    SET_ASYNC_STATE({ commit }: { commit: Commit }, obj: Partial<NonNeverState<typeof state>>) {
+      return new Promise(resolve=> {
+        setTimeout(()=> {
+          commit("SET_STATE", obj);
+          resolve(obj);
+        });
+      });
+    }
+  },
+  modules: {
+    modOne: { ... },
+    modTwo: { ... }
   }
 };
 
-// Mutation的类型一样需要你导出
-export type TMutation = typeof mutations;
+/** TState TMutation TAction(如果有的话) 必须要导出，当然你可以不叫这个名字，但必须在
+ *	自动生成的声明文件中对应
+ */
+export type TState = NonNeverState<GetState<typeof storeOptions>>
 
-export default new Vuex.Store<TState>({
-  state,
-  mutations
-});
+/**
+ * @description mutation类型，能够推断出嵌套的modules：
+ * {
+ *    SET_XXX: typeof second param;
+ *    module/SET_XX: typeof second param;
+ *    module/moduleSon/SET_X: typeof second param
+ * }
+ */
+export type TMutation = GetMutationKeyParamMap<typeof storeOptions>;
 
+export type TAction = GetActionKeyParamMap<typeof storeOptions>;
+
+const store = new Vuex.Store<TState>(storeOptions);
+
+export default store;
 ```
 
-- 选择覆盖：
-
-如果输入了yes，那么默认的模板会覆盖你已有的文件，但之后你不需要有其他操作。
-
-如果一切正常，这时候你就可以拿到正确的类型了！
-
 ## effect
+
 vuex-with-type is to solve the problem that vuex4 and lower versions cannot correctly infer the type when writing typescript. For now, I only wrote the type inference of state and mutation for the time being.
 
 ## prieiple
 The essential reason why the type cannot be correctly inferred under vuex4 is because the official vuex declaration file writes the type inference of `$store` as `Store<any>` when merging Vue, which leads to the merger of our subsequent declarations
 Neither can narrow the type, so the type of state is any, and the type of commit cannot be accurately inferred. My method is very simple. Reading this declaration file of vuex in node_modules then delete extra part.Then generate a declaration file that can accurately infer the state and commit automatically.
 
+## install
+
+```shell
+npm install vuex-with-type -g
+```
+
+
+
 ## usage
 Use the `vwt` command globally:
 - vwt handbook 👉  **View all command descriptions**
-- vwt config  👉 **Generate configuration file**
+- ~~vwt config  👉 **Generate configuration file**~~
 - vwt init  👉 **Initialize and generate a declaration file. If there is a file generated by the config command, it will be used first**
-
-### Details
-
-Considering that you use this package halfway or you don’t want to use the default template to overwrite your `vuex/index.ts`, you can choose to enter "no" when prompted whether to overwrite, and then a `typex.ts` file will be generated under the vuex file. It's an auxiliary type file, you can find
-The mapping tools `NonNeverState` and `isOwnKey`.Import them to the `vuex/index.ts`. The other type `DealNeverType` is a tool used to infer the `never` type from errors in the object.
 
 if everything is ok, you can get correct type now.
 
